@@ -13,13 +13,13 @@ rocketchat-db-deployer/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py        # FastAPI app, POST /rocketchat/db-command
-│   ├── config.py      # Hardcoded allowed users, dumps, TTLs, Jenkins/RC settings
+│   ├── config.py      # Non-secret constants (whitelists, dumps, ttl, Jenkins URL/job)
 │   ├── schemas.py     # Pydantic models: RocketChatPayload, ParsedCommand, BotResponse
 │   ├── parser.py      # parse_command(): splits and validates /db text
 │   ├── auth.py        # verify_token(), is_user_allowed()
 │   ├── jenkins.py     # trigger_jenkins_job(): async httpx POST to Jenkins
 │   ├── utils.py       # generate_db_name()
-│   └── settings.py    # Env-var config via pydantic-settings (optional overrides)
+│   └── settings.py    # Env-var settings for secrets (Rocket.Chat/Jenkins)
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
@@ -30,7 +30,6 @@ rocketchat-db-deployer/
 
 ```bash
 git clone <repository-url>
-cd rocketchat-db-deployer
 
 python -m venv .venv
 source .venv/bin/activate
@@ -40,7 +39,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-All settings are hardcoded in `app/config.py` for now:
+Non-secret settings are stored in `app/config.py`:
 
 | Variable | Default |
 |---|---|
@@ -49,7 +48,16 @@ All settings are hardcoded in `app/config.py` for now:
 | `ALLOWED_TTLS` | `{"4h", "8h", "24h", "48h"}` |
 | `JENKINS_URL` | `http://jenkins.local` |
 | `JENKINS_JOB` | `provision-dev-db` |
-| `ROCKETCHAT_TOKEN` | `supersecrettoken` |
+
+Secrets must be provided via environment variables (`.env`):
+
+| Variable | Description |
+|---|---|
+| `RC_SLASH_TOKEN` | Shared Rocket.Chat token checked against `X-Auth-Token` |
+| `JENKINS_USER` | Jenkins API username |
+| `JENKINS_TOKEN` | Jenkins API token |
+
+`JENKINS_API_TOKEN` is also supported for backward compatibility.
 
 ## Run
 
@@ -63,7 +71,7 @@ uvicorn app.main:app --reload --port 8000
 
 **Headers:**
 ```
-X-Auth-Token: supersecrettoken
+X-Auth-Token: <RC_SLASH_TOKEN>
 Content-Type: application/json
 ```
 
@@ -85,7 +93,7 @@ Content-Type: application/json
 ```bash
 curl -X POST http://localhost:8000/rocketchat/db-command \
   -H "Content-Type: application/json" \
-  -H "X-Auth-Token: supersecrettoken" \
+  -H "X-Auth-Token: <RC_SLASH_TOKEN>" \
   -d '{"user_name": "ivan", "text": "/db api masked-main 24h", "channel_id": "GENERAL"}'
 ```
 

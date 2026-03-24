@@ -1,7 +1,8 @@
 import httpx
 
-from app.config import JENKINS_JOB, JENKINS_TOKEN, JENKINS_URL, JENKINS_USER
+from app.config import JENKINS_JOB, JENKINS_URL
 from app.schemas import ParsedCommand
+from app.settings import settings
 
 
 async def trigger_jenkins_job(cmd: ParsedCommand, db_name: str) -> None:
@@ -28,7 +29,7 @@ async def trigger_jenkins_job(cmd: ParsedCommand, db_name: str) -> None:
         response = await client.post(
             url,
             data=job_params,
-            auth=(JENKINS_USER, JENKINS_TOKEN),
+            auth=(settings.JENKINS_USER, settings.JENKINS_TOKEN),
         )
 
     if response.status_code not in (200, 201):

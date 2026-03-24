@@ -18,11 +18,3 @@ ALLOWED_TTLS: set[str] = {"4h", "8h", "24h", "48h"}
 
 JENKINS_URL: str = "http://jenkins.local"
 JENKINS_JOB: str = "provision-dev-db"
-JENKINS_USER: str = "api_user"
-JENKINS_TOKEN: str = "api_token"
-
-# ---------------------------------------------------------------------------
-# Rocket.Chat
-# ---------------------------------------------------------------------------
-
-ROCKETCHAT_TOKEN: str = "supersecrettoken"

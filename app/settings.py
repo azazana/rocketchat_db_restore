@@ -1,14 +1,16 @@
 from typing import List
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    # Rocket.Chat
+    # Rocket.Chat (secret)
     RC_SLASH_TOKEN: str = Field(..., description="Rocket.Chat Slash Command Token")
+
+    # Rocket.Chat (non-secret)
     RC_ALLOWED_CHANNELS: str = Field(
         "#dev-db-requests",
         description="Comma-separated list of allowed Rocket.Chat channels",
@@ -18,10 +20,13 @@ class Settings(BaseSettings):
         description="Comma-separated list of allowed Rocket.Chat usernames (empty = allow all)",
     )
 
-    # Jenkins
-    JENKINS_URL: str = Field(..., description="Jenkins base URL")
+    # Jenkins (secret)
     JENKINS_USER: str = Field(..., description="Jenkins username")
-    JENKINS_API_TOKEN: str = Field(..., description="Jenkins API token")
+    JENKINS_TOKEN: str = Field(
+        ...,
+        description="Jenkins API token",
+        validation_alias=AliasChoices("JENKINS_TOKEN", "JENKINS_API_TOKEN"),
+    )
 
     @property
     def allowed_channels(self) -> List[str]:
