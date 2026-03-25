@@ -21,7 +21,6 @@ async def trigger_jenkins_job(cmd: ParsedCommand, db_name: str) -> None:
         "REQUESTED_BY": cmd.user_name,
         "DB_NAME": db_name,
         "DUMP_NAME": cmd.dump,
-        "TTL": cmd.ttl,
         "ROCKET_CHANNEL": cmd.channel_id,
     }
 

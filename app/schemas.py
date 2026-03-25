@@ -14,7 +14,6 @@ class ParsedCommand(BaseModel):
 
     label: str
     dump: str
-    ttl: str
     user_name: str
     channel_id: str
 

@@ -10,8 +10,6 @@ ALLOWED_USERS: set[str] = {"ivan", "petr", "anna"}
 
 ALLOWED_DUMPS: set[str] = {"empty", "masked-main", "qa-snapshot"}
 
-ALLOWED_TTLS: set[str] = {"4h", "8h", "24h", "48h"}
-
 # ---------------------------------------------------------------------------
 # Jenkins
 # ---------------------------------------------------------------------------

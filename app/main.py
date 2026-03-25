@@ -39,7 +39,7 @@ async def db_command(
         cmd = parse_command(payload.text, payload.user_name, payload.channel_id)
     except ValueError:
         logger.info("parse_error user=%s text=%r result=rejected", payload.user_name, payload.text)
-        return BotResponse(text="Invalid command format. Use: /db <label> <dump> <ttl>")
+        return BotResponse(text="Invalid command format. Use: /db <label> <dump>")
 
     # 4. Generate DB name from validated inputs only (never raw user input)
     db_name = generate_db_name(payload.user_name, cmd.label)
@@ -49,17 +49,17 @@ async def db_command(
         await trigger_jenkins_job(cmd, db_name)
     except Exception as exc:
         logger.error(
-            "jenkins_error user=%s label=%s dump=%s ttl=%s error=%s result=error",
-            cmd.user_name, cmd.label, cmd.dump, cmd.ttl, exc,
+            "jenkins_error user=%s label=%s dump=%s error=%s result=error",
+            cmd.user_name, cmd.label, cmd.dump, exc,
         )
         return BotResponse(text="Failed to trigger Jenkins job")
 
     logger.info(
-        "user=%s label=%s dump=%s ttl=%s db=%s result=accepted",
-        cmd.user_name, cmd.label, cmd.dump, cmd.ttl, db_name,
+        "user=%s label=%s dump=%s db=%s result=accepted",
+        cmd.user_name, cmd.label, cmd.dump, db_name,
     )
     return BotResponse(
-        text=f"Request accepted: db={db_name}, dump={cmd.dump}, ttl={cmd.ttl}"
+        text=f"Request accepted: db={db_name}, dump={cmd.dump}"
     )
 
 

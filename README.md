@@ -4,7 +4,7 @@ A minimal FastAPI service that acts as a secure gateway between Rocket.Chat and 
 
 ## How it works
 
-A user types `/db <label> <dump> <ttl>` in Rocket.Chat. The outgoing webhook calls this service, which validates the request and triggers a parameterised Jenkins job.
+A user types `/db <label> <dump>` in Rocket.Chat. The outgoing webhook calls this service, which validates the request and triggers a parameterised Jenkins job.
 
 ## Project structure
 
@@ -13,7 +13,7 @@ rocketchat-db-deployer/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py        # FastAPI app, POST /rocketchat/db-command
-│   ├── config.py      # Non-secret constants (whitelists, dumps, ttl, Jenkins URL/job)
+│   ├── config.py      # Non-secret constants (whitelists, dumps, Jenkins URL/job)
 │   ├── schemas.py     # Pydantic models: RocketChatPayload, ParsedCommand, BotResponse
 │   ├── parser.py      # parse_command(): splits and validates /db text
 │   ├── auth.py        # verify_token(), is_user_allowed()
@@ -45,7 +45,6 @@ Non-secret settings are stored in `app/config.py`:
 |---|---|
 | `ALLOWED_USERS` | `{"ivan", "petr", "anna"}` |
 | `ALLOWED_DUMPS` | `{"empty", "masked-main", "qa-snapshot"}` |
-| `ALLOWED_TTLS` | `{"4h", "8h", "24h", "48h"}` |
 | `JENKINS_URL` | `http://jenkins.local` |
 | `JENKINS_JOB` | `provision-dev-db` |
 
@@ -79,30 +78,29 @@ Content-Type: application/json
 ```json
 {
   "user_name": "ivan",
-  "text": "/db api masked-main 24h",
+  "text": "/db api masked-main",
   "channel_id": "GENERAL"
 }
 ```
 
-**Command format:** `/db <label> <dump> <ttl>`
+**Command format:** `/db <label> <dump>`
 - `label` — `^[a-z0-9-]{3,16}$`
 - `dump` — one of `ALLOWED_DUMPS`
-- `ttl` — one of `ALLOWED_TTLS`
 
 **Example curl:**
 ```bash
 curl -X POST http://localhost:8000/rocketchat/db-command \
   -H "Content-Type: application/json" \
   -H "X-Auth-Token: <RC_SLASH_TOKEN>" \
-  -d '{"user_name": "ivan", "text": "/db api masked-main 24h", "channel_id": "GENERAL"}'
+  -d '{"user_name": "ivan", "text": "/db api masked-main", "channel_id": "GENERAL"}'
 ```
 
 **Responses:**
 
 | Situation | Response text |
 |---|---|
-| Success | `Request accepted: db=db-ivan-api, dump=masked-main, ttl=24h` |
-| Bad format | `Invalid command format. Use: /db <label> <dump> <ttl>` |
+| Success | `Request accepted: db=db-ivan-api, dump=masked-main` |
+| Bad format | `Invalid command format. Use: /db <label> <dump>` |
 | Unauthorized | `Access denied` |
 | Jenkins error | `Failed to trigger Jenkins job` |
 
