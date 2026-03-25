@@ -2,11 +2,10 @@ import logging
 
 from fastapi import FastAPI, Header
 
-from app.auth import is_user_allowed, verify_token
+from app.auth import verify_token
 from app.jenkins import trigger_jenkins_job
 from app.parser import parse_command
 from app.schemas import BotResponse, RocketChatPayload
-from app.utils import generate_db_name
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,40 +25,32 @@ async def db_command(
 
     # 1. Verify the shared secret
     if not verify_token(x_auth_token):
-        logger.warning("auth_failed user=%s", payload.user_name)
+        logger.warning("auth_failed")
         return BotResponse(text="Access denied")
 
-    # 2. Verify the user is on the whitelist
-    if not is_user_allowed(payload.user_name):
-        logger.warning("user_not_allowed user=%s", payload.user_name)
-        return BotResponse(text="Access denied")
-
-    # 3. Parse and validate the command
+    # 2. Parse and validate the command
     try:
-        cmd = parse_command(payload.text, payload.user_name, payload.channel_id)
+        cmd = parse_command(payload.text)
     except ValueError:
-        logger.info("parse_error user=%s text=%r result=rejected", payload.user_name, payload.text)
-        return BotResponse(text="Invalid command format. Use: /db <label> <dump>")
+        logger.info("parse_error text=%r result=rejected", payload.text)
+        return BotResponse(text="Invalid command format. Use: /db <templatebases>")
 
-    # 4. Generate DB name from validated inputs only (never raw user input)
-    db_name = generate_db_name(payload.user_name, cmd.label)
-
-    # 5. Trigger Jenkins
+    # 3. Trigger Jenkins
     try:
-        await trigger_jenkins_job(cmd, db_name)
+        await trigger_jenkins_job(cmd)
     except Exception as exc:
         logger.error(
-            "jenkins_error user=%s label=%s dump=%s error=%s result=error",
-            cmd.user_name, cmd.label, cmd.dump, exc,
+            "jenkins_error templatebases=%s error=%s result=error",
+            cmd.templatebases, exc,
         )
         return BotResponse(text="Failed to trigger Jenkins job")
 
     logger.info(
-        "user=%s label=%s dump=%s db=%s result=accepted",
-        cmd.user_name, cmd.label, cmd.dump, db_name,
+        "templatebases=%s result=accepted",
+        cmd.templatebases,
     )
     return BotResponse(
-        text=f"Request accepted: db={db_name}, dump={cmd.dump}"
+        text=f"Request accepted: templatebases={cmd.templatebases}"
     )
 
 

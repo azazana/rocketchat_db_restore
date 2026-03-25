@@ -1,27 +1,25 @@
 import httpx
+from urllib.parse import quote
 
 from app.config import JENKINS_JOB, JENKINS_URL
 from app.schemas import ParsedCommand
 from app.settings import settings
 
 
-async def trigger_jenkins_job(cmd: ParsedCommand, db_name: str) -> None:
-    """Trigger the Jenkins provisioning job via ``buildWithParameters``.
+async def trigger_jenkins_job(cmd: ParsedCommand) -> None:
+    """Trigger Jenkins ``buildWithParameters`` with a whitelisted templatebase.
 
     Args:
         cmd: Validated command parameters.
-        db_name: Pre-generated database name (never raw user input).
 
     Raises:
         RuntimeError: When Jenkins returns an unexpected status code.
         httpx.HTTPError: On network-level failures.
     """
-    url = f"{JENKINS_URL.rstrip('/')}/job/{JENKINS_JOB}/buildWithParameters"
+    job_path = quote(JENKINS_JOB, safe="")
+    url = f"{JENKINS_URL.rstrip('/')}/job/{job_path}/buildWithParameters"
     job_params = {
-        "REQUESTED_BY": cmd.user_name,
-        "DB_NAME": db_name,
-        "DUMP_NAME": cmd.dump,
-        "ROCKET_CHANNEL": cmd.channel_id,
+        "templatebases": cmd.templatebases,
     }
 
     async with httpx.AsyncClient(timeout=10) as client:

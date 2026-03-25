@@ -1,18 +1,14 @@
 # ---------------------------------------------------------------------------
-# Access control
+# Allowed template bases
 # ---------------------------------------------------------------------------
 
-ALLOWED_USERS: set[str] = {"ivan", "petr", "anna"}
+ALLOWED_TEMPLATEBASES: set[str] = {
+	"erp_borzenkova",
+}
 
 # ---------------------------------------------------------------------------
-# Allowed command parameters
+# Jenkins target
 # ---------------------------------------------------------------------------
 
-ALLOWED_DUMPS: set[str] = {"empty", "masked-main", "qa-snapshot"}
-
-# ---------------------------------------------------------------------------
-# Jenkins
-# ---------------------------------------------------------------------------
-
-JENKINS_URL: str = "http://jenkins.local"
-JENKINS_JOB: str = "provision-dev-db"
+JENKINS_URL: str = "http://172.16.0.139:8080"
+JENKINS_JOB: str = "restore erp for dev"

@@ -1,10 +1,10 @@
-# Rocket.Chat DB Deployer
+# Rocket.Chat Template Restore Gateway
 
-A minimal FastAPI service that acts as a secure gateway between Rocket.Chat and Jenkins to trigger database provisioning jobs via a slash command.
+A minimal FastAPI service that proxies a validated template restore request to Jenkins.
 
 ## How it works
 
-A user types `/db <label> <dump>` in Rocket.Chat. The outgoing webhook calls this service, which validates the request and triggers a parameterised Jenkins job.
+A user sends `/db <templatebases>` (or just `<templatebases>`). The service checks that template value against an allowlist and runs Jenkins `buildWithParameters` with `templatebases=<value>`.
 
 ## Project structure
 
@@ -13,14 +13,16 @@ rocketchat-db-deployer/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py        # FastAPI app, POST /rocketchat/db-command
-│   ├── config.py      # Non-secret constants (whitelists, dumps, Jenkins URL/job)
+│   ├── config.py      # Non-secret constants (allowed templates, Jenkins URL/job)
 │   ├── schemas.py     # Pydantic models: RocketChatPayload, ParsedCommand, BotResponse
-│   ├── parser.py      # parse_command(): splits and validates /db text
-│   ├── auth.py        # verify_token(), is_user_allowed()
+│   ├── parser.py      # parse_command(): validates templatebases from command text
+│   ├── auth.py        # verify_token()
 │   ├── jenkins.py     # trigger_jenkins_job(): async httpx POST to Jenkins
-│   ├── utils.py       # generate_db_name()
 │   └── settings.py    # Env-var settings for secrets (Rocket.Chat/Jenkins)
 ├── .env.example
+├── Dockerfile
+├── docker-compose.yml
+├── .dockerignore
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -43,10 +45,9 @@ Non-secret settings are stored in `app/config.py`:
 
 | Variable | Default |
 |---|---|
-| `ALLOWED_USERS` | `{"ivan", "petr", "anna"}` |
-| `ALLOWED_DUMPS` | `{"empty", "masked-main", "qa-snapshot"}` |
-| `JENKINS_URL` | `http://jenkins.local` |
-| `JENKINS_JOB` | `provision-dev-db` |
+| `ALLOWED_TEMPLATEBASES` | `{"erp_borzenkova"}` |
+| `JENKINS_URL` | `http://172.16.0.139:8080` |
+| `JENKINS_JOB` | `restore_erp_for_dev` |
 
 Secrets must be provided via environment variables (`.env`):
 
@@ -64,6 +65,26 @@ Secrets must be provided via environment variables (`.env`):
 uvicorn app.main:app --reload --port 8000
 ```
 
+## Run In Docker
+
+Build image:
+
+```bash
+docker build -t rocketchat-db-deployer .
+```
+
+Run container:
+
+```bash
+docker run --rm -p 8000:8000 --env-file .env rocketchat-db-deployer
+```
+
+Or use Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
 ## Endpoint
 
 `POST /rocketchat/db-command`
@@ -77,30 +98,34 @@ Content-Type: application/json
 **Body:**
 ```json
 {
-  "user_name": "ivan",
-  "text": "/db api masked-main",
-  "channel_id": "GENERAL"
+  "text": "/db erp_borzenkova"
 }
 ```
 
-**Command format:** `/db <label> <dump>`
-- `label` — `^[a-z0-9-]{3,16}$`
-- `dump` — one of `ALLOWED_DUMPS`
+**Command format:** `/db <templatebases>`
+- `templatebases` — one of `ALLOWED_TEMPLATEBASES`
 
 **Example curl:**
 ```bash
 curl -X POST http://localhost:8000/rocketchat/db-command \
   -H "Content-Type: application/json" \
   -H "X-Auth-Token: <RC_SLASH_TOKEN>" \
-  -d '{"user_name": "ivan", "text": "/db api masked-main", "channel_id": "GENERAL"}'
+  -d '{"text": "/db erp_borzenkova"}'
+```
+
+Equivalent Jenkins call performed by this service:
+```bash
+curl -X POST "http://172.16.0.139:8080/job/restore_erp_for_dev/buildWithParameters" \
+  --user "<JENKINS_USER>:<JENKINS_TOKEN>" \
+  --data "templatebases=erp_borzenkova"
 ```
 
 **Responses:**
 
 | Situation | Response text |
 |---|---|
-| Success | `Request accepted: db=db-ivan-api, dump=masked-main` |
-| Bad format | `Invalid command format. Use: /db <label> <dump>` |
+| Success | `Request accepted: templatebases=erp_borzenkova` |
+| Bad format | `Invalid command format. Use: /db <templatebases>` |
 | Unauthorized | `Access denied` |
 | Jenkins error | `Failed to trigger Jenkins job` |
 
