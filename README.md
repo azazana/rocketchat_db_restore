@@ -59,7 +59,6 @@ Secrets must be provided via environment variables (`.env`):
 | `JENKINS_USER` | Jenkins API username |
 | `JENKINS_TOKEN` | Jenkins API token |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token used to send responses |
-| `TELEGRAM_WEBHOOK_SECRET` | Secret header value for Telegram webhook verification |
 
 `JENKINS_API_TOKEN` is also supported for backward compatibility.
 
@@ -140,15 +139,11 @@ curl http://localhost:8000/health
 # {"status": "ok"}
 ```
 
-## Telegram Webhook
+## Telegram Long Polling
 
-Endpoint:
+Telegram integration now uses `getUpdates` long polling from inside the app process.
 
-`POST /telegram/webhook`
-
-Header:
-
-`X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>`
+No public Telegram webhook endpoint and no `setWebhook` call are required.
 
 Telegram command format:
 
@@ -156,10 +151,11 @@ Telegram command format:
 - `/db@<bot_name> <templatebases>`
 - `/whoami`
 
-Telegram deduplication:
+Long polling behavior:
 
-1. The service keeps a recent in-memory cache of processed `update_id` values.
-2. Repeated webhook deliveries with the same `update_id` are ignored.
+1. On app startup, a background worker starts if `TELEGRAM_BOT_TOKEN` is set.
+2. Worker reads updates from Telegram with `timeout=30`.
+3. Processed updates are acknowledged by moving `offset` to `update_id + 1`.
 
 Telegram access control:
 
@@ -168,11 +164,3 @@ Telegram access control:
 3. For full access, add id to `ALLOWED_TELEGRAM_FULL_ACCESS_USER_IDS` in [app/config.py](app/config.py).
 4. For restricted access (only one base), add mapping in `ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID` in [app/config.py](app/config.py), e.g. `111111111: "erp_test"`.
 5. Restart the service.
-
-Set webhook (replace placeholders):
-
-```bash
-curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
-  -d "url=https://<your-domain>/telegram/webhook" \
-  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"
-```

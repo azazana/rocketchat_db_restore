@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = Field(None, description="Telegram bot token")
     TELEGRAM_WEBHOOK_SECRET: str | None = Field(
         None,
-        description="Secret token expected in X-Telegram-Bot-Api-Secret-Token",
+        description="Deprecated legacy webhook secret; ignored in long-polling mode",
     )
 
 

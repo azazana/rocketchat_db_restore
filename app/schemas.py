@@ -44,9 +44,3 @@ class TelegramUpdate(BaseModel):
 
     update_id: int
     message: TelegramMessage | None = None
-
-
-class TelegramWebhookAck(BaseModel):
-    """Plain acknowledgement returned to Telegram webhook calls."""
-
-    ok: bool = True
