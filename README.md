@@ -156,6 +156,11 @@ Telegram command format:
 - `/db@<bot_name> <templatebases>`
 - `/whoami`
 
+Telegram deduplication:
+
+1. The service keeps a recent in-memory cache of processed `update_id` values.
+2. Repeated webhook deliveries with the same `update_id` are ignored.
+
 Telegram access control:
 
 1. Send `/whoami` to the bot.

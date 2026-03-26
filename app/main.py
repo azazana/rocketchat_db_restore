@@ -1,4 +1,6 @@
 import logging
+import time
+from collections import OrderedDict
 
 from fastapi import FastAPI, Header
 
@@ -20,6 +22,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Rocket.Chat DB Deployer")
+
+
+_TELEGRAM_UPDATE_TTL_SECONDS = 3600
+_TELEGRAM_DEDUP_MAX_SIZE = 10000
+_seen_telegram_updates: OrderedDict[int, float] = OrderedDict()
+
+
+def _is_duplicate_telegram_update(update_id: int) -> bool:
+    """Return True when the Telegram update_id has already been processed recently."""
+    now = time.monotonic()
+
+    # Drop expired records first.
+    while _seen_telegram_updates:
+        oldest_update_id, seen_at = next(iter(_seen_telegram_updates.items()))
+        if now - seen_at <= _TELEGRAM_UPDATE_TTL_SECONDS:
+            break
+        _seen_telegram_updates.pop(oldest_update_id)
+
+    if update_id in _seen_telegram_updates:
+        return True
+
+    _seen_telegram_updates[update_id] = now
+
+    # Keep memory bounded for long-lived processes.
+    while len(_seen_telegram_updates) > _TELEGRAM_DEDUP_MAX_SIZE:
+        _seen_telegram_updates.popitem(last=False)
+
+    return False
 
 
 @app.post("/rocketchat/db-command", response_model=BotResponse)
@@ -66,6 +96,10 @@ async def telegram_webhook(
     x_telegram_bot_api_secret_token: str | None = Header(default=None),
 ) -> TelegramWebhookAck:
     """Handle incoming Telegram webhook updates."""
+
+    if _is_duplicate_telegram_update(payload.update_id):
+        logger.info("telegram_duplicate_update_ignored update_id=%s", payload.update_id)
+        return TelegramWebhookAck(ok=True)
 
     if settings.TELEGRAM_WEBHOOK_SECRET and x_telegram_bot_api_secret_token != settings.TELEGRAM_WEBHOOK_SECRET:
         logger.warning("telegram_auth_failed update_id=%s", payload.update_id)
