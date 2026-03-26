@@ -16,5 +16,12 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("JENKINS_TOKEN", "JENKINS_API_TOKEN"),
     )
 
+    # Telegram (secret)
+    TELEGRAM_BOT_TOKEN: str | None = Field(None, description="Telegram bot token")
+    TELEGRAM_WEBHOOK_SECRET: str | None = Field(
+        None,
+        description="Secret token expected in X-Telegram-Bot-Api-Secret-Token",
+    )
+
 
 settings = Settings()

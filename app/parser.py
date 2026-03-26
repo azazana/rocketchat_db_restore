@@ -13,7 +13,7 @@ def parse_command(text: str) -> ParsedCommand:
         ValueError: on any validation failure.
     """
     parts = text.strip().split()
-    if len(parts) == 2 and parts[0] == "/db":
+    if len(parts) == 2 and parts[0].split("@", 1)[0] == "/db":
         templatebases = parts[1]
     elif len(parts) == 1:
         templatebases = parts[0]

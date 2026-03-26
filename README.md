@@ -1,6 +1,6 @@
-# Rocket.Chat Template Restore Gateway
+# Rocket.Chat + Telegram Template Restore Gateway
 
-A minimal FastAPI service that proxies a validated template restore request to Jenkins.
+A minimal FastAPI service that proxies a validated template restore request to Jenkins from Rocket.Chat or Telegram.
 
 ## How it works
 
@@ -46,6 +46,8 @@ Non-secret settings are stored in `app/config.py`:
 | Variable | Default |
 |---|---|
 | `ALLOWED_TEMPLATEBASES` | `{"erp_borzenkova"}` |
+| `ALLOWED_TELEGRAM_FULL_ACCESS_USER_IDS` | `{123456789}` |
+| `ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID` | `{}` |
 | `JENKINS_URL` | `http://172.16.0.139:8080` |
 | `JENKINS_JOB` | `restore_erp_for_dev` |
 
@@ -56,6 +58,8 @@ Secrets must be provided via environment variables (`.env`):
 | `RC_SLASH_TOKEN` | Shared Rocket.Chat token checked against `X-Auth-Token` |
 | `JENKINS_USER` | Jenkins API username |
 | `JENKINS_TOKEN` | Jenkins API token |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token used to send responses |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret header value for Telegram webhook verification |
 
 `JENKINS_API_TOKEN` is also supported for backward compatibility.
 
@@ -134,4 +138,36 @@ curl -X POST "http://172.16.0.139:8080/job/restore_erp_for_dev/buildWithParamete
 ```bash
 curl http://localhost:8000/health
 # {"status": "ok"}
+```
+
+## Telegram Webhook
+
+Endpoint:
+
+`POST /telegram/webhook`
+
+Header:
+
+`X-Telegram-Bot-Api-Secret-Token: <TELEGRAM_WEBHOOK_SECRET>`
+
+Telegram command format:
+
+- `/db <templatebases>`
+- `/db@<bot_name> <templatebases>`
+- `/whoami`
+
+Telegram access control:
+
+1. Send `/whoami` to the bot.
+2. Take the returned Telegram user id.
+3. For full access, add id to `ALLOWED_TELEGRAM_FULL_ACCESS_USER_IDS` in [app/config.py](app/config.py).
+4. For restricted access (only one base), add mapping in `ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID` in [app/config.py](app/config.py), e.g. `111111111: "erp_test"`.
+5. Restart the service.
+
+Set webhook (replace placeholders):
+
+```bash
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
+  -d "url=https://<your-domain>/telegram/webhook" \
+  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"
 ```
