@@ -12,8 +12,9 @@ ALLOWED_TEMPLATEBASES: set[str] = {
     "erp_korchinskiy",
     "erp_lazarenko",
     "erp_yuzhukova",
-    "erp_panteelev",
+    "erp_panteleev",
     "erp_ulyanov",
+    "erp_shtulman"
 }
 
 ALLOWED_TELEGRAM_FULL_ACCESS_USER_IDS: set[int] = {
