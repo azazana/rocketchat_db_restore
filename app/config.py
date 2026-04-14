@@ -13,6 +13,7 @@ ALLOWED_TEMPLATEBASES: set[str] = {
     "erp_lazarenko",
     "erp_yuzhukova",
     "erp_panteleev",
+    "erp_gelunov",
     "erp_ulyanov",
     "erp_shtulman"
 }
@@ -26,6 +27,7 @@ ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID: dict[int, str] = {
     1204949195: "erp_ochkasov",
     125318003: "erp_test",
     339703795: "erp_ulyanov",
+    338590359: "erp_gelunov",
 }
 
 # ---------------------------------------------------------------------------
