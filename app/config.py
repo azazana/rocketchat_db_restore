@@ -28,6 +28,8 @@ ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID: dict[int, str] = {
     125318003: "erp_test",
     339703795: "erp_ulyanov",
     338590359: "erp_gelunov",
+    225036101: "erp_ivanus",
+    597055470: "erp_chistyakov",
 }
 
 # ---------------------------------------------------------------------------
