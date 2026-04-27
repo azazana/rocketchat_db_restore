@@ -25,6 +25,7 @@ ALLOWED_TELEGRAM_FULL_ACCESS_USER_IDS: set[int] = {
 ALLOWED_TELEGRAM_OWN_TEMPLATEBASE_BY_USER_ID: dict[int, str] = {
     881153598: "erp_lazarenko",
     1204949195: "erp_ochkasov",
+    472726244: "erp_korchinskiy",
     125318003: "erp_test",
     339703795: "erp_ulyanov",
     338590359: "erp_gelunov",
